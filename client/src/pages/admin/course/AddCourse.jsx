@@ -59,11 +59,13 @@ const AddCourse = () => {
                         <SelectContent>
                             <SelectGroup>
                                 <SelectLabel>Category</SelectLabel>
-                                <SelectItem value="Technical Introduction to Cybersecurity">Technical Introduction to Cybersecurity</SelectItem>
-                                <SelectItem value="Threats landscape">Threats landscape</SelectItem>
-                                <SelectItem value="Social Engineering">Social Engineering</SelectItem>
-                                <SelectItem value="Threats Analysis">Threats Analysis</SelectItem>
-                                <SelectItem value="Attacks With Preventions">Attacks With Preventions</SelectItem>
+                                <SelectItem value="Cyber Hygiene / Best Practices">Cyber Hygiene / Best Practices</SelectItem>
+                                <SelectItem value="Phishing & Social Engineering">Phishing & Social Engineering</SelectItem>
+                                <SelectItem value="Safe Browsing & Online Behavior">Safe Browsing & Online Behavior</SelectItem>
+                                <SelectItem value="Mobile & Device Security">Mobile & Device Security</SelectItem>
+                                <SelectItem value="Threats & Attack Types">Threats & Attack Types</SelectItem>
+                                <SelectItem value="Workplace Cybersecurity">Workplace Cybersecurity</SelectItem>
+
                             </SelectGroup>
                         </SelectContent>
                     </Select>

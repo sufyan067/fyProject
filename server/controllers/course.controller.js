@@ -1,6 +1,9 @@
 import { Course } from "../models/course.model.js";
 import { Lecture } from "../models/lecture.model.js";
 import { deleteMediaFromCloudinary, deleteVideoFromCloudinary, uploadMedia } from "../utils/cloudinary.js";
+import { CoursePurchase } from "../models/coursePurchase.model.js";
+import { User } from "../models/user.model.js";
+
 export const createCourse = async (req, res) => {
     try {
         const { courseTitle, category } = req.body;
@@ -24,6 +27,48 @@ export const createCourse = async (req, res) => {
             message: "Failed to create Course"
         })
 
+    }
+}
+export const searchCourse = async (req,res) => {
+    try {
+        const {query = "", categories = [], sortByPrice =""} = req.query;
+        console.log(categories);
+        
+        // create search query
+        const searchCriteria = {
+            isPublished:true,
+            $or:[
+                {courseTitle: {$regex:query, $options:"i"}},
+                {subTitle: {$regex:query, $options:"i"}},
+                {category: {$regex:query, $options:"i"}},
+            ]
+        }
+
+        // if categories selected
+        if (categories && categories.length > 0) {
+            // Ensure categories is always an array
+            const categoryArray = Array.isArray(categories) ? categories : [categories];
+            searchCriteria.category = { $in: categoryArray };
+        }
+
+        // define sorting order
+        const sortOptions = {};
+        if(sortByPrice === "low"){
+            sortOptions.coursePrice = 1;//sort by price in ascending
+        }else if(sortByPrice === "high"){
+            sortOptions.coursePrice = -1; // descending
+        }
+
+        let courses = await Course.find(searchCriteria).populate({path:"creator", select:"name photoUrl"}).sort(sortOptions);
+
+        return res.status(200).json({
+            success:true,
+            courses: courses || []
+        });
+
+    } catch (error) {
+        console.log(error);
+        
     }
 }
 export const getPublishedCourse = async (_,res) => {
@@ -267,6 +312,13 @@ export const togglePublishCourse = async (req,res) => {
                 message:"Course not found!"
             });
         }
+        // Check if user is an approved instructor
+        const user = req.id ? await import('../models/user.model.js').then(m => m.User.findById(req.id)) : null;
+        if (!user || user.role !== 'instructor' || !user.isInstructorApproved) {
+            return res.status(403).json({
+                message: "Only approved instructors can publish courses. Please wait for admin approval."
+            });
+        }
         // publish status based on the query paramter
         course.isPublished = publish === "true";
         await course.save();
@@ -282,3 +334,44 @@ export const togglePublishCourse = async (req,res) => {
         })
     }
 }
+export const getInstructorStats = async (req, res) => {
+    try {
+        console.log("[InstructorStats] req.id:", req.id);
+        const instructorId = req.id;
+        // Sirf instructor check karo
+        const instructor = await User.findById(instructorId);
+        console.log("[InstructorStats] instructor:", instructor);
+        if (!instructor || instructor.role !== 'instructor') {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+        // Apne courses lao
+        const courses = await Course.find({ creator: instructorId });
+        console.log("[InstructorStats] courses:", courses);
+        const courseIds = courses.map(c => c._id);
+        // In courses ki sales lao
+        const purchases = await CoursePurchase.find({ courseId: { $in: courseIds }, status: 'completed' });
+        console.log("[InstructorStats] purchases:", purchases);
+        // Revenue aur students nikaalo
+        let totalRevenue = 0;
+        let totalSales = 0;
+        let studentsSet = new Set();
+        purchases.forEach(p => {
+            totalRevenue += p.amount || 0;
+            totalSales += 1;
+            studentsSet.add(p.userId.toString());
+        });
+        console.log("[InstructorStats] totalRevenue:", totalRevenue, "totalSales:", totalSales, "students:", studentsSet.size);
+        return res.status(200).json({
+            success: true,
+            stats: {
+                courses: courses.length,
+                sales: totalSales,
+                revenue: totalRevenue,
+                students: studentsSet.size
+            }
+        });
+    } catch (error) {
+        console.log("[InstructorStats] ERROR:", error);
+        return res.status(500).json({ success: false, message: 'Failed to fetch instructor stats.' });
+    }
+};

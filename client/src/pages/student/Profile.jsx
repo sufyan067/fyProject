@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import React, { useEffect, useState } from 'react'
 import { Loader2, LocateFixed } from 'lucide-react'
 import Course from './Course'
-import { useLoadUserQuery, useUpdateUserMutation } from '@/features/api/authApi'
+import { useLoadUserQuery, useUpdateUserMutation, useRequestInstructorMutation } from '@/features/api/authApi'
 import { toast } from 'sonner'
 
 const Profile = () => {
@@ -15,6 +14,7 @@ const Profile = () => {
   const [ProfilePhoto, setProfilePhoto] = useState("");
   const { data, isLoading, refetch } = useLoadUserQuery();
   const [updateUser, { data: updateUserData, isLoading: updateUserIsLoading, isError,error, isSuccess }] = useUpdateUserMutation();
+  const [requestInstructor, { isLoading: isRequestingInstructor }] = useRequestInstructorMutation();
   const onChangeHandler = (e) => {
     const file = e.target.files?.[0];
     if (file) setProfilePhoto(file);
@@ -43,10 +43,29 @@ refetch();
   const  user = data && data.user;
   return (
     <div className='max-w-4xl mx-auto my-24 px-4 md:px-0'>
-      <h1 className='font-bold text-2xl text-center md:text-left'>PROFILE</h1>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <h1 className='font-extrabold text-3xl text-center md:text-left mb-8 tracking-tight text-gray-800 dark:text-gray-100'>Profile</h1>
+      {/* Become Instructor Button */}
+      {user.role === 'student' && !user.isInstructorApproved && (
+        <div className="mb-6 flex justify-center">
+          <Button
+            className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white font-bold px-6 py-2 rounded-full shadow-lg hover:from-blue-700 hover:to-pink-600 transition-all"
+            disabled={isRequestingInstructor}
+            onClick={async () => {
+              try {
+                const res = await requestInstructor().unwrap();
+                toast.success(res.message || 'Request sent!');
+              } catch (err) {
+                toast.error(err.data?.message || 'Failed to send request');
+              }
+            }}
+          >
+            Become Instructor
+          </Button>
+        </div>
+      )}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-8 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-8'>
         <div className="flex flex-col items-center">
-          <Avatar className='h-24 w-24 md:h-32 md:w-32 mb-4'>
+          <Avatar className='h-24 w-24 md:h-32 md:w-32 mb-4 shadow-md'>
             <AvatarImage src={user.photoUrl || "https://github.com/shadcn.png"} alt="@shadcn" />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
@@ -78,11 +97,11 @@ refetch();
           </div>
           <Dialog>
             <DialogTrigger asChild>
-              <Button size="sm" className="mt-2">Edit Profile</Button>
+              <Button size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow">Edit Profile</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-2xl border-2 border-blue-200 dark:border-blue-900 shadow-xl bg-white dark:bg-gray-900">
               <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
+                <DialogTitle className="text-blue-700 dark:text-blue-300">Edit Profile</DialogTitle>
                 <DialogDescription>
                   Make changes to your profile here. Click save when you're done.
                 </DialogDescription>
@@ -103,7 +122,7 @@ refetch();
                 </div>
               </div>
               <DialogFooter>
-                <Button disabled={updateUserIsLoading} onClick={updateUserHandler} >
+                <Button disabled={updateUserIsLoading} onClick={updateUserHandler} className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow">
                   {
                     updateUserIsLoading ? (
                       <>
@@ -117,15 +136,29 @@ refetch();
           </Dialog>
         </div>
       </div>
-      <div>
-        <h1 className='font-mediem text-lg'>Courses your're enrolled in </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 my-5">
-          {
-            user.enrolledCourses.length == 0 ? <h1>You haven't enrolled in any courses yet</h1> : (
-              user.enrolledCourses.map((course) => <Course key={course._id} course={course} />)
-            )
-          }
-        </div>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8">
+        {user.role === 'admin' ? (
+          <div className="text-blue-700 dark:text-blue-300 text-center py-8 font-semibold">
+            You are an admin. Manage users and courses from the dashboard.
+          </div>
+        ) : (
+          <>
+            <h1 className='font-semibold text-lg mb-4 text-gray-800 dark:text-gray-100'>Courses you're enrolled in</h1>
+            {user.role === 'instructor' ? (
+              <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                You are an instructor. You do not have enrolled courses.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 my-5">
+                {
+                  user.enrolledCourses.length == 0 ? <h1 className="text-gray-500 dark:text-gray-400">You haven't enrolled in any courses yet</h1> : (
+                    user.enrolledCourses.map((course) => <Course key={course._id} course={course} />)
+                  )
+                }
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

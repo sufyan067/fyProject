@@ -7,7 +7,9 @@ import userRoute from "./routes/user.route.js";
 import courseRoute from "./routes/course.route.js";
 import mediaRoute from "./routes/media.route.js";
 import purchaseRoute from "./routes/purchaseCourse.route.js";
-// import courseProgressRoute from "./routes/courseProgress.route.js";
+import bodyParser from "body-parser";
+import { stripeWebhook } from "./controllers/coursePurchase.controller.js";
+import courseProgressRoute from "./routes/courseProgress.route.js";
 
 dotenv.config({});
 
@@ -15,10 +17,17 @@ dotenv.config({});
 connectDB();
 const app = express();
 
+// Stripe webhook route (must come BEFORE express.json())
+app.post(
+  "/api/v1/purchase/webhook",
+  bodyParser.raw({ type: "application/json" }),
+  stripeWebhook
+);
+
+app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 // default middleware
-app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
@@ -31,7 +40,7 @@ app.use("/api/v1/media", mediaRoute);
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/course", courseRoute);
 app.use("/api/v1/purchase", purchaseRoute);
-// app.use("/api/v1/progress", courseProgressRoute);
+app.use("/api/v1/progress", courseProgressRoute);
 
 
 app.listen(PORT, () => {

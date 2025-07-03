@@ -5,9 +5,10 @@ import App from './App.jsx';
 import { Provider } from 'react-redux';
 import { appStore } from './app/store';
 import { Toaster } from './components/ui/sonner';
-//import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useLoadUserQuery } from './features/api/authApi';
 import { Loader2 } from 'lucide-react';
+import LandingPage from './pages/LandingPage';
 
 const Custom = ({ children }) => {
   const { isLoading } = useLoadUserQuery();
@@ -26,10 +27,7 @@ const Custom = ({ children }) => {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={appStore}>
-      <Custom>
-        <App />
-        <Toaster />
-      </Custom>
+      <App />
     </Provider>
   </StrictMode>
 );

@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { useGetCreatorCourseQuery } from '@/features/api/courseApi'
+import { useGetCreatorCourseQuery, useRemoveCourseMutation } from '@/features/api/courseApi'
 import { Edit } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -54,8 +54,16 @@ const invoices = [
 
 
 const CourseTable = () => {
-  const {data, isLoading, error} = useGetCreatorCourseQuery();
+  const {data, isLoading, error, refetch} = useGetCreatorCourseQuery();
+  const [removeCourse, { isLoading: removing }] = useRemoveCourseMutation();
   const navigate = useNavigate();
+
+  const handleRemoveCourse = async (courseId) => {
+    if(window.confirm("Are you sure you want to delete this course?")) {
+      await removeCourse(courseId);
+      refetch();
+    }
+  };
 
   if(isLoading) return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   
@@ -82,7 +90,10 @@ const CourseTable = () => {
             <TableCell className="font-medium">{course?.coursePrice || "NA"}</TableCell>
             <TableCell><Badge>{course.isPublished ? "Published" : "Draft"}</Badge></TableCell>
             <TableCell>{course.courseTitle}</TableCell>
-            <TableCell className="text-right"><Button size='sm' variant='ghost' onClick={()=>navigate(`${course._id}`)}><Edit/></Button></TableCell>
+            <TableCell className="text-right">
+              <Button size='sm' variant='ghost' onClick={()=>navigate(`${course._id}`)}><Edit/></Button>
+              <Button size='sm' variant='destructive' onClick={()=>handleRemoveCourse(course._id)} disabled={removing}>Delete</Button>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

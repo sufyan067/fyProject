@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEditCourseMutation, useGetCourseByIdQuery, usePublishCourseMutation } from '@/features/api/courseApi';
+import { useEditCourseMutation, useGetCourseByIdQuery, usePublishCourseMutation, useRemoveCourseMutation } from '@/features/api/courseApi';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
@@ -24,22 +24,22 @@ const CourseTab = () => {
     const courseId = params.courseId
     const { data: courseByIdData, isLoading: courseByIdLoading, refetch } =
         useGetCourseByIdQuery(courseId);
-    const [publishCourse, {}]=usePublishCourseMutation();
+    const [publishCourse, { }] = usePublishCourseMutation();
     const course = courseByIdData?.course;
     console.log("Course Data:", course);
     useEffect(() => {
-        if (course) {
+        if (courseByIdData?.course) {
             setInput({
-                CourseTitle: course.courseTitle,
-                SubTitle: course.subTitle,
-                description: course.description,
-                category: course.category,
-                courseLevel: course.courseLevel,
-                coursePrice: course.coursePrice,
+                CourseTitle: courseByIdData.course.courseTitle,
+                SubTitle: courseByIdData.course.subTitle,
+                description: courseByIdData.course.description,
+                category: courseByIdData.course.category,
+                courseLevel: courseByIdData.course.courseLevel,
+                coursePrice: courseByIdData.course.coursePrice,
                 courseThumbnail: "",
             });
         }
-    }, [course]);
+    }, [courseByIdData]);
     //get file
     const selectThumbnail = (e) => {
         const file = e.target.files?.[0];
@@ -53,6 +53,7 @@ const CourseTab = () => {
     }
     const [previewThumbnail, setPreviewThumbnail] = useState("");
     const [editCourse, { data, isLoading, isSuccess, error }] = useEditCourseMutation();
+    const [removeCourse, { isLoading: removing }] = useRemoveCourseMutation();
 
     const navigate = useNavigate();
     const selectCategory = (value) => {
@@ -82,13 +83,32 @@ const CourseTab = () => {
         try {
             const response = await publishCourse({ courseId, query: action });
             if (response.data) {
-                refetch();
+                await refetch();
+                // Update input state with latest course data if available
+                if (response.data.course) {
+                    setInput({
+                        CourseTitle: response.data.course.courseTitle,
+                        SubTitle: response.data.course.subTitle,
+                        description: response.data.course.description,
+                        category: response.data.course.category,
+                        courseLevel: response.data.course.courseLevel,
+                        coursePrice: response.data.course.coursePrice,
+                        courseThumbnail: "",
+                    });
+                }
                 toast.success(response.data.message);
             }
         } catch (error) {
             toast.error("Failed to publish or unpublish course");
         }
-    }
+    };
+    const handleRemoveCourse = async () => {
+        if(window.confirm("Are you sure you want to delete this course?")) {
+            await removeCourse(courseId);
+            toast.success("Course removed!");
+            navigate("/admin/course");
+        }
+    };
     useEffect(() => {
         if (isSuccess) {
             toast.success(data.message || " Course update.")
@@ -109,10 +129,10 @@ const CourseTab = () => {
                     </CardDescription>
                 </div>
                 <div className='space-x-2'>
-                    <Button disabled={courseByIdData?.course.lectures.length === 0} variant="outline" onClick={()=> publishStatusHandler(courseByIdData?.course.isPublished ? "false" : "true")}>
+                    <Button disabled={courseByIdData?.course.lectures.length === 0} variant="outline" onClick={() => publishStatusHandler(courseByIdData?.course.isPublished ? "false" : "true")}>
                         {courseByIdData?.course.isPublished ? "Unpublish" : "Publish"}
                     </Button>
-                    <Button>Remove Course</Button>
+                    <Button onClick={handleRemoveCourse} disabled={removing}>Remove Course</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -149,11 +169,12 @@ const CourseTab = () => {
                                 <SelectContent>
                                     <SelectGroup>
                                         <SelectLabel>Category</SelectLabel>
-                                        <SelectItem value="Technical Introduction to Cybersecurity">Technical Introduction to Cybersecurity</SelectItem>
-                                        <SelectItem value="Threats landscape">Threats landscape</SelectItem>
-                                        <SelectItem value="Social Engineering">Social Engineering</SelectItem>
-                                        <SelectItem value="Threats Analysis">Threats Analysis</SelectItem>
-                                        <SelectItem value="Attacks With Preventions">Attacks With Preventions</SelectItem>
+                                        <SelectItem value="Cyber Hygiene / Best Practices">Cyber Hygiene / Best Practices</SelectItem>
+                                        <SelectItem value="Phishing & Social Engineering">Phishing & Social Engineering</SelectItem>
+                                        <SelectItem value="Safe Browsing & Online Behavior">Safe Browsing & Online Behavior</SelectItem>
+                                        <SelectItem value="Mobile & Device Security">Mobile & Device Security</SelectItem>
+                                        <SelectItem value="Threats & Attack Types">Threats & Attack Types</SelectItem>
+                                        <SelectItem value="Workplace Cybersecurity">Workplace Cybersecurity</SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>

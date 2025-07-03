@@ -68,7 +68,43 @@ export const authApi = createApi({
                 body:formData,
                 credentials:"include"
             })
-        })
+        }),
+        requestInstructor: builder.mutation({
+            query: () => ({
+                url: '/request-instructor',
+                method: 'POST',
+            }),
+        }),
+        getPendingInstructors: builder.query({
+            query: () => ({
+                url: '/pending-instructors',
+                method: 'GET',
+            }),
+        }),
+        approveInstructor: builder.mutation({
+            query: (userId) => ({
+                url: `/approve-instructor/${userId}`,
+                method: 'PATCH',
+            }),
+        }),
+        rejectInstructor: builder.mutation({
+            query: (userId) => ({
+                url: `/reject-instructor/${userId}`,
+                method: 'PATCH',
+            }),
+        }),
+        getAllUsers: builder.query({
+            query: () => ({
+                url: 'all',
+                method: 'GET',
+            })
+        }),
+        deleteUser: builder.mutation({
+            query: (userId) => ({
+                url: `${userId}`,
+                method: 'DELETE',
+            })
+        }),
     })
 });
 
@@ -77,5 +113,11 @@ export const {
     useLoginUserMutation,
     useLogoutUserMutation,
     useLoadUserQuery,
-    useUpdateUserMutation
+    useUpdateUserMutation,
+    useRequestInstructorMutation,
+    useGetPendingInstructorsQuery,
+    useApproveInstructorMutation,
+    useGetAllUsersQuery,
+    useDeleteUserMutation,
+    useRejectInstructorMutation,
 } = authApi;

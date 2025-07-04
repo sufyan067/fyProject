@@ -11,11 +11,15 @@ import bodyParser from "body-parser";
 import { stripeWebhook } from "./controllers/coursePurchase.controller.js";
 import courseProgressRoute from "./routes/courseProgress.route.js";
 
+import path from "path";
+
 dotenv.config({});
 
 // call database connection here
 connectDB();
 const app = express();
+
+const __dirname = path.resolve();
 
 // Stripe webhook route (must come BEFORE express.json())
 app.post(
@@ -42,6 +46,10 @@ app.use("/api/v1/course", courseRoute);
 app.use("/api/v1/purchase", purchaseRoute);
 app.use("/api/v1/progress", courseProgressRoute);
 
+app.use(express.static(path.join(__dirname, "/client/dist")));
+app.get("*", (_, res) => {
+  res.sendFile(path.resolve(__dirname, "client", "dist", "index.html"));
+});
 
 app.listen(PORT, () => {
     console.log(`Server listen at port ${PORT}`);

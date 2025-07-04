@@ -34,6 +34,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.0",
     "recharts": "^3.0.2",
+    "server": "file:..",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7"
